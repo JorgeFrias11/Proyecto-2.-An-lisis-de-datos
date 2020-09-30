@@ -13,27 +13,32 @@ with open("synergy_logistics_database.csv", "r", encoding = 'utf-8-sig') as arch
 
 # OPCION 1: GENERAR RUTAS
 def gen_rutas(direccion): 
-
+    
+    # Variables de apoyo
     contador = 0
     rutas_contadas = []
     conteo_rutas = []
     valores = []
     
-      
+    # Bucle para iterar por cada elemento
     for ruta in lista: 
         ruta_actual = [ruta['origin'], ruta['destination']]
-        if ruta['direction'] == direccion and ruta_actual not in rutas_contadas: 
+        if ruta['direction'] == direccion and ruta_actual not in rutas_contadas:
+            # Bucle para contar y sumar valores de cada ruta
             for movimiento in lista:
                 if movimiento['direction'] == direccion:
                     if ruta_actual == [movimiento['origin'], movimiento['destination']]:
                         contador += 1
                         valores.append(int(movimiento['total_value']))
+            # Agregar contador y valores a lista vacía
             rutas_contadas.append(ruta_actual)
             conteo_rutas.append([ruta['origin'], ruta['destination'], 
                                  contador, sum(valores)])
+            # Reiniciar contador y lista 'valores'
             contador = 0 
             del valores[:]
     
+    ## Ordenar por valor de transaccion
     conteo_rutas.sort(reverse = True, key = lambda x: x[3])
     
     ## Sacar total de movimientos y su valor 
@@ -43,6 +48,7 @@ def gen_rutas(direccion):
         total_movimientos += pais[2]
         total_valor += pais[3]
     
+    ## Slice para mantener los 10 con valores más altos
     mejores_diez = conteo_rutas[0:10]
     
     ## Sacar total de movimientos y su valor para los 10 mejores
@@ -57,12 +63,22 @@ def gen_rutas(direccion):
 # OPCION 1: MENSAJE A IMPRIMIR
 def imprimir_rutas(direccion = 'Imports'):
     
-    lista_rutas = gen_rutas(direccion)
+    # Guardar totales calculados
+    datos_rutas = gen_rutas(direccion)[1:5]
+    # Guardar lista de rutas
+    lista_rutas = gen_rutas(direccion)[0]
     transaccion = []
+    # Definir la variable transaccion, para usar después en el print
     if direccion == 'Imports':
         transaccion = ['importación', 'Importaciones']
     else: 
         transaccion = ['exportación', 'Exportaciones']
+    
+    print(f'\n{transaccion[1]} totales: {datos_rutas[0]:,}.'
+          f'\nValor total: {datos_rutas[1]:,}.'
+          f'\n\n{transaccion[1]} de las 10 rutas más demandadas: {datos_rutas[2]:,}.'
+          f'\nValor: {datos_rutas[3]:,}.'
+          )
     
     print(f'\nLas 10 rutas de {transaccion[0]} con más flujos son:')
     for ruta in lista_rutas: 
@@ -79,19 +95,24 @@ def gen_transportes(direccion = 'Imports'):
     conteo_medios = []
     valores = []
     
+    # Bucle para pasar por cada elemento
     for medio in lista: 
         medio_actual = medio['transport_mode']
         if medio['direction'] == direccion and medio_actual not in medios_contados: 
+            # Bucle para contar y sumar valores de cada transporte que se repita
             for transporte in lista: 
                 if transporte['direction'] == direccion:
                     if medio_actual == transporte['transport_mode']:
                         contador += 1
                         valores.append(int(transporte['total_value']))
+            # Agregar los transportes a las listas
             medios_contados.append(medio_actual)
             conteo_medios.append([medio['transport_mode'], contador, sum(valores)])
+            # Reiniciar contador y vaciar lista valores
             contador = 0
             del valores[:]
     
+    # Ordenar por valor de transaccion
     conteo_medios.sort(reverse = True, key = lambda x: x[2])
 
     return conteo_medios
@@ -99,6 +120,7 @@ def gen_transportes(direccion = 'Imports'):
 ## OPCION DOS: MENSAJE A IMPRIMIR
 def imprimir_transportes(direccion = 'Imports'):
     
+    # Definir variable para utilizar el texto indicado al imprimir
     lista_transportes = gen_transportes(direccion)
     transaccion = []
     if direccion == 'Imports':
@@ -115,14 +137,16 @@ def imprimir_transportes(direccion = 'Imports'):
 
 # OPCION 3: VALOR TOTAL IMPORTACIONES Y EXPORTACIONES
 def gen_porcentajes(direccion = 'Imports'):
-
+    
+    # definir variables de apoyo
     contador = 0
     paises_contados = []
     conteo_paises = []
     valores = []
     valores_total = []
     eleccion = ''
-      
+    
+    # Bucle para pasar por cada elemento de la lista
     for pais in lista: 
         # Si se importa se considera el destino, sino el origen
         # Condicion para filtrar por destino u origen
@@ -131,22 +155,27 @@ def gen_porcentajes(direccion = 'Imports'):
         else: 
             eleccion = 'origin'
            
-        # Si se importa se considera el destino
         pais_actual = pais[eleccion]
+        # Condición para obtener la suma total de imp/exportaciones
         if pais['direction'] == direccion: 
             valores_total.append(int(pais['total_value']))
+            # Condicion para agregar cada pais nuevo que se encuentre
             if pais_actual not in paises_contados:
+                # Bucle para contar y sumar las transacciones por pais
                 for venta in lista:
                     if venta['direction'] == direccion and pais_actual == venta[eleccion]:
                         contador += 1
                         valores.append(int(venta['total_value']))
-                                
+                # Guardar los paises que ya se contador                
                 paises_contados.append(pais_actual)
                 
+                # Obtener la suma total de los valores de cada país, y agregar a lista 
                 pais_total = sum(valores)
                 conteo_paises.append([pais[eleccion], contador, pais_total])
+                #Reiniciar contador y lista valores
                 contador = 0 
                 del valores[:]
+                
     # Sacar suma total y el porcentaje correspondiente a cada país
     total = sum(valores_total)
     for pais in conteo_paises:
@@ -156,7 +185,10 @@ def gen_porcentajes(direccion = 'Imports'):
     ## Ordenar por pocentaje de mayor a menor
     conteo_paises.sort(reverse = True, key = lambda x: x[2])    
     
-    ## Contar los porcentajes hasta llegar al 80% del total 
+    ## Contar los porcentajes hasta llegar al 80% del total
+    '''Generé dos listas: paises importantes y no importantes, para guardar
+    aquellos países que generan el 80% y 20% del valor de la empresa, 
+    respectivamente '''
     paises_importantes = []
     paises_no_importantes = []
     conteo_porcentajes = []
@@ -168,14 +200,16 @@ def gen_porcentajes(direccion = 'Imports'):
         # Lista 2: paises que ocupan el ultimo 20%
         else:
             paises_no_importantes.append(pais)
-        
+    # Guarde ambas listas, para usarlas en el print   
     return paises_importantes, paises_no_importantes
 
 ## OPCION 3: IMPRIMIR MENSAJE
 def imprimir_porcentajes(direccion = 'Imports'):
     
+    # Guardar las listas de la funcion anterior
     paises_importantes = gen_porcentajes(direccion)[0]
     paises_no_importantes = gen_porcentajes(direccion)[1]
+    # Definir transaccion, para usarlo en el caso que corresponda en el print
     transaccion = ''
     if direccion == 'Imports':
         transaccion = 'importaciones'
